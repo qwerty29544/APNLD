@@ -1,0 +1,323 @@
+---
+title: "Лабораторная работа №1. Осциллятор без трения."
+author: "Юрченков Иван Александрович"
+date: "01.09.2020 0:38:01"
+output: 
+  html_document: 
+    toc: yes
+    fig_width: 8
+    fig_height: 8
+    fig_caption: yes
+    number_sections: yes
+    keep_md: yes
+    df_print: tibble
+    highlight: kate
+  pdf_document: 
+    toc: yes
+    fig_width: 8
+    fig_height: 8
+    fig_caption: yes
+    number_sections: yes
+    latex_engine: xelatex
+    keep_tex: yes
+    highlight: tango
+---
+
+
+
+```{r libs setup, warning=FALSE, message=FALSE}
+#install.packages("plotly")
+#install.packages("plot3D")
+#install.packages("deSolve")
+
+library(plotly)
+library(plot3D)
+library(deSolve)
+```
+
+
+# Гармонический маятник без трения
+
+## Численное моделирование динамики гармонического маятника без трения
+
+Произведем решение системы на базе численного метода Рунге-Кутты
+
+\[\frac{dx}{dt} = p\]
+\[\frac{dp}{dt} = -\omega^2 * x\]
+
+```{r, warning=FALSE, message=FALSE}
+K <- 300
+m <- 20
+x0 <- pi/5
+V0 <- 0
+
+Harm_pendulum_cons <- function(t, y, parms) {
+  dx <- y[2]
+  dp <- -parms[1]^2 * y[1]
+  list(c(dx,dp))
+}
+
+yini <- c(x = x0, p = V0)
+times = seq(0, 10, by = 0.01)
+x_p_t <- deSolve::ode(times = times, y = yini, func = Harm_pendulum_cons, parms = sqrt(K/m))
+
+```
+
+
+
+```{r plot fig1, warning=F, message=F}
+plot(x = x_p_t[, "time"], 
+     y = x_p_t[, "p"], 
+     type = "l", 
+     col = "blue", 
+     lwd = 1,
+     main = "График динамики положения осциллятора и его скорости во времени",
+     ylab = "Положение x(t), Скорость p(t)",
+     xlab = "Время, t")
+lines(x = x_p_t[, "time"],
+      y = x_p_t[, "x"],
+      col = "orange",
+      lwd = 1)
+legend(x = 0, y = max(x_p_t[, "p"]), 
+       legend = c("p(t)", "x(t)"), 
+       col = c("blue", "orange"), 
+       lty = c(1, 1))
+abline(h = c(max(x_p_t[, "x"]), 
+             min(x_p_t[, "x"]),
+             max(x_p_t[, "p"]), 
+             min(x_p_t[, "p"])), 
+       lty = c(2, 2, 2, 2))
+
+```
+
+
+```{r plotly fig1, warning=F, message=F}
+plotly::plot_ly() %>% 
+  plotly::add_lines(x = x_p_t[, "time"], 
+                    y = x_p_t[, "p"],
+                    name = "p(t)") %>% 
+  plotly::add_lines(x = x_p_t[,"time"], 
+                    y = x_p_t[,"x"],
+                    name = "x(t)") %>% 
+  plotly::layout(
+    title = "График динамики положения x(t), и скорости p(t) осциллятора",
+    scene = list(
+      xaxis = list(title = "time"),
+      yaxis = list(title = "x(t), p(t)")
+  ))
+```
+
+```{r plot fig2, message=F, warning=F}
+plot(x = x_p_t[, "x"], 
+     y = x_p_t[, "p"],
+     type = "l",
+     lwd = 1,
+     col = "blue",
+     main = "Фазовый портрет p(x)",
+     ylab = "Скорость p(t)",
+     xlab = "Координата x(t)",
+     asp = 1)
+abline(h = c(max(x_p_t[, "p"]), min(x_p_t[, "p"])),
+       v = c(max(x_p_t[, "x"]), min(x_p_t[, "x"])),
+       lty = c(2, 2, 2, 2), 
+       col = c(rep("blue", 2), rep("orange", 2)))
+
+```
+
+```{r plotly fig2, message=F, warning=F}
+plotly::plot_ly() %>% 
+  plotly::add_paths(x = x_p_t[, "x"], 
+                    y = x_p_t[, "p"], 
+                    name = "p(x)") %>%  
+  plotly::layout(
+    title = "Фазовый портрет динамики p(x)",
+    scene = list(
+      xaxis = list(title = "time"),
+      yaxis = list(title = "x(t), p(t)")))
+
+```
+
+## Полная энергия системы
+
+```{r energy1, warning=F, message=F}
+x <- seq(-10, 10, length.out = 200)
+y <- x
+
+E <- function(x,y) {K/m * x^2 / 2 + y^2 / 2}
+z <- outer(x, y, E)
+
+E2 <- function(x,y) {x^2 / 2 + y^2 / 2}
+z2 <- outer(x, y, E2)
+```
+
+
+```{r energyplot, warning=F, message=F}
+persp(x = x, y = y, z = z, 
+      theta = 25, phi = 20, 
+      col = "pink", 
+      xlab = "x(t)",
+      ylab = "p(t)",
+      zlab = "K/m * p^2 / 2 + x^2 / 2",
+      axes = T, nticks = 10, ticktype = "detailed",
+      main = "График полной энергии системы")
+
+plot3D::contour2D(x = x, y = y, z = z, main = "Контурный график энергии")
+```
+
+```{r energyplot2, warning=F, message=F}
+persp(x = x, y = y, z = z2, 
+      theta = 25, phi = 20, 
+      col = "pink", 
+      xlab = "x(t)",
+      ylab = "p(t)",
+      zlab = "p^2 / 2 + x^2 / 2", 
+      axes = T, nticks = 10, ticktype = "detailed",
+      main = "График полной энергии системы с единичной частотой")
+
+plot3D::contour2D(x = x, y = y, z = z2, main = "Контурный график энергии")
+```
+```{r energyplot plotly 1, message=F, warning=F}
+plotly::plot_ly(x = x,
+                y = y,
+                z = ~z) %>% 
+  plotly::add_surface(
+    contours = list(
+      z = list(
+      show = TRUE,
+      usecolormap = TRUE,
+      highlightcolor = "#0000ff",
+      project = list(z = TRUE)
+      )
+    )
+  ) %>% 
+  plotly::layout(
+    scene = list(
+      xaxis = list(title = "x(t)"),
+      yaxis = list(title = "p(t)"),
+      zaxis = list(title = "omega^2 * x^2 / 2 + p^2 / 2")),
+    title = "График энергии гармонического осциллятора без трения")
+```
+
+```{r}
+plotly::plot_ly(x = x,
+                y = y,
+                z = ~z2) %>% 
+  plotly::add_surface(
+    contours = list(
+      z = list(
+      show = TRUE,
+      usecolormap = TRUE,
+      highlightcolor = "#0000ff",
+      project = list(z = TRUE)
+      )
+    )
+  ) %>% 
+  plotly::layout(
+    scene = list(
+      xaxis = list(title = "x(t)"),
+      yaxis = list(title = "p(t)"),
+      zaxis = list(title = "x^2 / 2 + p^2 / 2")),
+    title = "График энергии гармонического осциллятора без трения")
+```
+
+# Ангармонический осциллятор без трения
+
+
+\[\frac{dx}{dt} = p\]
+\[\frac{dp}{dt} = -\omega^2 * sin(x)\]
+
+
+## Численное решение динамической системы
+
+## Полная энергия динамической системы
+
+# Гармонический осциллятор с трением
+
+Изначальный вид динамической системы
+\[m \frac{d^2x}{dt^2} + \alpha\frac{dx}{dt} + \beta x = 0\]
+
+Приведем уравнение выше к уравнению вида:
+\[\frac{d^2x}{dt^2} + 2\delta\frac{dx}{dt} + x = 0\]
+
+Или произведя замену $\frac{dx}{dt} = p$ получим:
+\[\frac{dx}{dt} = p\]
+\[\frac{dp}{dt} = -2\delta p - x\]
+
+
+# Ангармончиеский осциллятор с трением
+
+\[\frac{d^2x}{dt^2} + 2\delta\frac{dx}{dt} + {\omega_0}^2sin(x) = 0\]
+
+Или произведя замену $\frac{dx}{dt} = p$ получим:
+\[\frac{dx}{dt} = p\]
+\[\frac{dp}{dt} = -2\delta p - {\omega_0}^2sin(x)\]
+
+
+# Модельная задача консервативной системы
+
+```{r}
+a <- 1
+b <- -2
+x <- seq(-10, 10, length.out = 100)
+y <- x
+E <- function(x, y) {-b * cos(y) + a * cos(x)}
+V <- function(x, y) {a * b * cos(x) * sin(y)}
+
+E_xy <- outer(x, y, E)
+V_xy <- outer(x, y, V)
+```
+
+```{r}
+plotly::plot_ly(x = x,
+                y = y,
+                z = ~E_xy) %>% 
+  plotly::add_surface(
+    contours = list(
+      z = list(
+      show = TRUE,
+      usecolormap = TRUE,
+      highlightcolor = "#0000ff",
+      project = list(z = TRUE)
+      )
+    )
+  )
+```
+
+```{r}
+fig2 <- plotly::plot_ly() %>% 
+  plotly::add_contour(x = x, 
+              y = y, 
+              z = ~E_xy)
+  
+fig2
+```
+
+
+```{r}
+fig3 <- plotly::plot_ly(x = x,
+                        y = y, 
+                        z = ~V_xy) %>% 
+  plotly::add_surface(
+    contours = list(
+      z = list(
+      show = TRUE,
+      usecolormap = TRUE,
+      highlightcolor = "#0000ff",
+      project = list(z = TRUE)
+      )
+    )
+  )
+fig3
+```
+
+
+```{r}
+fig4 <- plotly::plot_ly() %>% 
+  plotly::add_contour(x = x, 
+              y = y, 
+              z = ~V_xy)
+fig4
+```
+
+
+
