@@ -12,15 +12,6 @@ output:
     keep_md: yes
     df_print: tibble
     highlight: kate
-  pdf_document: 
-    toc: yes
-    fig_width: 8
-    fig_height: 8
-    fig_caption: yes
-    number_sections: yes
-    latex_engine: xelatex
-    keep_tex: yes
-    highlight: kate
 ---
 
 
@@ -82,6 +73,16 @@ $n^* = 0, \forall k^*$. Также из первого уравнения пол
 
 
 ```r
+install.packages("deSolve")
+```
+
+```
+## Installing package into '/home/ivan/R/x86_64-pc-linux-gnu-library/4.0'
+## (as 'lib' is unspecified)
+```
+
+```r
+library(deSolve)
 r <- 0.015
 q <- 1.3
 n0 <- 0.6
@@ -216,8 +217,8 @@ segments(x0 = n_k_t[maxes(n_k_t[, "n"])[1:5], "time"],
          y0 = n_k_t[maxes(n_k_t[, "n"])[2], "n"],
          y1 = n_k_t[maxes(n_k_t[, "n"])[2], "n"],
          col = "orange2", lty = 2)
-text(labels = formatC(n_k_t[maxes(n_k_t[, "n"]), "n"] / n_k_t[minis(n_k_t[, "n"]), "n"][-1], digits = 3), 
-     x = n_k_t[maxes(n_k_t[, "n"]), "time"]/2 + n_k_t[minis(n_k_t[, "n"]), "time"][-1]/2, 
+text(labels = formatC(n_k_t[maxes(n_k_t[, "n"]), "n"][1:5] / n_k_t[minis(n_k_t[, "n"]), "n"][2:6], digits = 3), 
+     x = n_k_t[maxes(n_k_t[, "n"]), "time"][1:5]/2 + n_k_t[minis(n_k_t[, "n"]), "time"][2:6]/2, 
      y = n_k_t[maxes(n_k_t[, "n"]), "n"][1]/2 + n_k_t[minis(n_k_t[, "n"]), "n"][2]/2)
 ```
 
